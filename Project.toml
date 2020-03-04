@@ -1,0 +1,9 @@
+name = "PoleExploration"
+uuid = "6f678a3b-cef4-45cd-8023-1a0e41a40050"
+authors = ["Albin Heimerson <albin.heimerson@control.lth.se>"]
+version = "0.1.0"
+
+[deps]
+Interact = "c601a237-2ae4-5e1e-952c-7a85b0c7eef1"
+Mux = "a975b10e-0019-58db-a62f-e48ff68538c9"
+WebIO = "0f1e0344-ec1d-5b48-a673-e5cf874b6c29"
