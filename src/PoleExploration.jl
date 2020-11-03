@@ -3,44 +3,16 @@ using Makie
 using ControlSystems
 using UnicodeFun
 
-@enum Mode real
-
-function log_ticks(lims, n)
-    a = round(lims[1], RoundNearest)
-    b = round(lims[2], RoundNearest)
-    r = range(a, b, length=n)
-    l = raw"10^{".*string.(r).*"}"
-    t = to_latex.(l)
-    return r, t
-end
-
-function find_close(p, poles, zeros, eps)
-    closest = [Inf, Inf]
-    for p in poles[]
-        if sum(abs2, p .- state.pos) < sum(abs2, closest .- state.pos)
-            closest = p
-        end
-    end
-    eps = [0.5, 0.5] # Should be like (xlim, ylim) / 100 or smth
-    if all(abs.(closest .- state.pos) .< eps)
-        println(closest)
-    else
-        println("nothing")
-    end
-end
-
-@enum PZ pole zero
-
-mutable struct PoleZero
-    pos::Point2f0
-    type::PZ
-    selected::Bool
-end
+include("roots.jl")
+include("plotting.jl")
 
 function run()
     # Variables
-    poles = Node{Array{Point{2, Float32}, 1}}([(-1, 0)])
-    zeros = Node{Array{Point{2, Float32}, 1}}([])
+    roots = Node(Root[Root(Point2f0(-1, 0), true, false)])
+
+    zeros = lift(get_zeros, roots)
+    poles = lift(get_poles, roots)
+    selected = lift(get_selected, roots)
     gain = Node{Float32}(1.0)
     
     sys = lift((z, p, k) -> begin
@@ -59,8 +31,8 @@ function run()
     # Step plot
     step_ax = layout[3, 1] = LAxis(scene, title = "Step")
     step_points = lift(sys -> begin
-        t = range(0, 5 / minimum(abs.(pole(sys))), length=100)
-        y, t, x = step(sys, t)
+        y, t, x = step(sys)
+        limits!(step_ax, minimum(t), maximum(t), minimum(y), maximum(y))
         convert.(Point2f0, zip(t, vec(y)))
     end, sys)
     lines!(step_ax, step_points)
@@ -68,8 +40,7 @@ function run()
     # Impulse plot
     impulse_ax = layout[4, 1] = LAxis(scene, title = "Impulse")
     impulse_points = lift(sys -> begin
-        t = range(0, 5 / minimum(abs.(pole(sys))), length=100)
-        y, t, x = impulse(sys, t)
+        y, t, x = impulse(sys)
         convert.(Point2f0, zip(t, vec(y)))
     end, sys)
     lines!(impulse_ax, impulse_points)
@@ -92,16 +63,20 @@ function run()
     end, sys)
     lines!(nyquist_ax, nyquist_points)
 
-    # Gain slider
-    gain_slider = labelslider!(scene, "Gain", 0.01:0.01:10, format = x -> "K=$(x)", startvalue = 1)
-    on(gain_slider.slider.value) do value
+    gain_slider = LSlider(scene, range=0.01:0.01:10, startvalue=gain[])
+    gain_label = LText(scene, lift(x -> "K=$(x)", gain_slider.value))
+    on(gain_slider.value) do value
         gain[] = value
-        update!(scene)
     end
-    layout[0, 1] = gain_slider.layout
+    layout[0, 1] = hbox!(gain_slider, gain_label)
 
     # Other
-    tf_text = layout[0, 2] = LText(scene, text="G(s) = a/b (placeholder)", tellwidth=false)
+    tf_text = lift(sys -> begin
+        io = IOBuffer()
+        ControlSystems.print_siso(io, sys.matrix[1, 1])
+        String(take!(io))[1:end-1]
+    end, sys)
+    tf_label = layout[0, 2] = LText(scene, text=tf_text, tellwidth=false)
 
     mousestate = addmousestate!(root_ax.scene)
     onmouseleftdragstart(mousestate) do state
@@ -122,7 +97,6 @@ function run()
         if ispressed(button, Keyboard.space)
             poles[] = Point2f0[(-1, 0)]
             zeros[] = Array{Point{2, Float32}, 1}(undef, 0)
-
         elseif ispressed(button, Keyboard.c)
             poles[] = push!(poles[], Point2f0(-1, 1), Point2f0(-1, -1))
         elseif ispressed(button, Keyboard.r)
