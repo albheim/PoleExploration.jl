@@ -7,20 +7,28 @@ function log_ticks(lims, n)
     return r, t
 end
 
-function find_limits(points)
+function find_limits(x, y, xmargins=0.05, ymargins=0.05)
     xmin = ymin = Inf
     xmax = ymax = -Inf
-    for p in points
-        if p[1] < xmin 
-            xmin = p[1]
-        elseif p[1] > xmax
-            xmax = p[1]
+    for i in eachindex(x)
+        if x[i] < xmin 
+            xmin = x[i]
         end
-        if p[2] < ymin 
-            ymin = p[2]
-        elseif p[2] > ymax 
-            ymax = p[2]
+        if x[i] > xmax
+            xmax = x[i]
+        end
+        if y[i] < ymin 
+            ymin = y[i]
+        end
+        if y[i] > ymax 
+            ymax = y[i]
         end
     end
+    xdiff = xmax - xmin
+    xmax += xmargins * xdiff
+    xmin -= xmargins * xdiff
+    ydiff = ymax - ymin
+    ymax += ymargins * ydiff
+    ymin -= ymargins * ydiff
     return xmin, xmax, ymin, ymax
 end

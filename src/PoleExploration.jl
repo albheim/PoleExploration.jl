@@ -32,7 +32,7 @@ function run()
     step_ax = layout[3, 1] = LAxis(scene, title = "Step")
     step_points = lift(sys -> begin
         y, t, x = step(sys)
-        limits!(step_ax, minimum(t), maximum(t), minimum(y), maximum(y))
+        limits!(step_ax, find_limits(t, y)...)
         convert.(Point2f0, zip(t, vec(y)))
     end, sys)
     lines!(step_ax, step_points)
@@ -41,6 +41,7 @@ function run()
     impulse_ax = layout[4, 1] = LAxis(scene, title = "Impulse")
     impulse_points = lift(sys -> begin
         y, t, x = impulse(sys)
+        limits!(impulse_ax, find_limits(t, y)...)
         convert.(Point2f0, zip(t, vec(y)))
     end, sys)
     lines!(impulse_ax, impulse_points)
@@ -49,9 +50,16 @@ function run()
     bodemag_ax = layout[1, 2] = LAxis(scene, title = "Magnitude")
     bodephase_ax = layout[2, 2] = LAxis(scene, title = "Phase")
     linkxaxes!(bodemag_ax, bodephase_ax)
-    bodeout = lift(bode, sys) # TODO use nyquist instead to calculate this?
-    bodemag_points = lift(x -> convert.(Point2f0, zip(log.(x[3]), log.(x[1]))), bodeout)
-    bodephase_points = lift(x -> convert.(Point2f0, zip(log.(x[3]), x[2])), bodeout)
+    bodevars = lift(sys -> begin
+        mag, phase, w = bode(sys)
+        logmag = log.(mag)
+        logw = log.(w)
+        limits!(bodemag_ax, find_limits(logw, logmag)...)
+        limits!(bodephase_ax, find_limits(logw, phase)...)
+        logw, logmag, phase
+    end, sys) # TODO use nyquist instead to calculate this?
+    bodemag_points = lift(x -> convert.(Point2f0, zip(x[1], x[2])), bodevars)
+    bodephase_points = lift(x -> convert.(Point2f0, zip(x[1], x[3])), bodevars)
     lines!(bodemag_ax, bodemag_points)
     lines!(bodephase_ax, bodephase_points)
 
@@ -59,6 +67,7 @@ function run()
     nyquist_ax = layout[3:4, 2] = LAxis(scene, title = "Nyquist")
     nyquist_points = lift(sys -> begin
         a, b, _ = nyquistv(sys)
+        limits!(nyquist_ax, find_limits(a, b)...)
         convert.(Point2f0, zip(a, b))
     end, sys)
     lines!(nyquist_ax, nyquist_points)
@@ -91,18 +100,20 @@ function run()
     onmouseleftclick(mousestate) do state
         # Find closest point, if point is within reasonable distance given scale select it
         find_close(state.pos, poles[], zeros[], [1, 1])
+        # TODO set selected
+    end
+    onmouseleftdoubleclick(mousestate) do state
     end
 
     on(scene.events.keyboardbuttons) do button
-        if ispressed(button, Keyboard.space)
+        if ispressed(button, Keyboard.r)
             poles[] = Point2f0[(-1, 0)]
             zeros[] = Array{Point{2, Float32}, 1}(undef, 0)
-        elseif ispressed(button, Keyboard.c)
-            poles[] = push!(poles[], Point2f0(-1, 1), Point2f0(-1, -1))
-        elseif ispressed(button, Keyboard.r)
-            poles[] = push!(poles[], Point2f0(-1, 0))
+            # TODO set gain_slider to 1 also?
+        elseif ispressed(button, Keyboard.space)
+            # TODO switch selected pole/zero
         elseif ispressed(button, Keyboard.delete)
-            
+            # TODO remove selected
         end
     end
 
