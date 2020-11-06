@@ -12,10 +12,21 @@ function run()
 
     zeros = lift(get_zeros, roots)
     poles = lift(get_poles, roots)
-    selected = lift(get_selected, roots)
     gain = Node{Float32}(1.0)
+
+    selected_idx = lift(get_selected, roots)
+    selected_pos = lift((x, i) -> begin
+        if i != 0
+            if x[i] != 0
+                return Point2f0[x[i].pos, [1, -1] .* x[i].pos]
+            else
+                return Point2f0[x[i].pos]
+            end
+        end
+    end, roots, selected_idx)
     
     sys = lift((z, p, k) -> begin
+        #@show zeros poles selected 
         zpk([a + b*im for (a, b) in z], [a + b*im for (a, b) in p], k)
     end, zeros, poles, gain)
 
@@ -26,13 +37,15 @@ function run()
 
     # Root locus
     root_ax = layout[1:2, 1] = LAxis(scene, title = "Root locus")
-    root_plot = scatter!(root_ax, poles, color=:red, marker='+', markersize=10)
+    scatter!(root_ax, poles, color=:red, marker='+', markersize=10)
+    #scatter!(root_ax, zeros, color=:red, marker='+', markersize=10)
+    #scatter!(root_ax, selected_pos, color=:green, marker='+', markersize=10)
 
     # Step plot
     step_ax = layout[3, 1] = LAxis(scene, title = "Step")
     step_points = lift(sys -> begin
         y, t, x = step(sys)
-        limits!(step_ax, find_limits(t, y)...)
+        limits!(step_ax, find_limits(t), find_limits(y))
         convert.(Point2f0, zip(t, vec(y)))
     end, sys)
     lines!(step_ax, step_points)
@@ -41,7 +54,8 @@ function run()
     impulse_ax = layout[4, 1] = LAxis(scene, title = "Impulse")
     impulse_points = lift(sys -> begin
         y, t, x = impulse(sys)
-        limits!(impulse_ax, find_limits(t, y)...)
+        limits!(impulse_ax, find_limits(t), find_limits(y))
+        #axes[4].xticks = 0:pi:2pi
         convert.(Point2f0, zip(t, vec(y)))
     end, sys)
     lines!(impulse_ax, impulse_points)
@@ -52,10 +66,18 @@ function run()
     linkxaxes!(bodemag_ax, bodephase_ax)
     bodevars = lift(sys -> begin
         mag, phase, w = bode(sys)
-        logmag = log.(mag)
-        logw = log.(w)
-        limits!(bodemag_ax, find_limits(logw, logmag)...)
-        limits!(bodephase_ax, find_limits(logw, phase)...)
+        logmag = log10.(mag)
+        logw = log10.(w)
+        wlims = find_limits(logw)
+        maglims = find_limits(logmag)
+        phaselims = find_limits(phase)
+        wticks = log_ticks(wlims)
+        magticks = log_ticks(maglims)
+        bodemag_ax.xticks = wticks
+        bodemag_ax.yticks = magticks
+        bodephase_ax.xticks = wticks
+        limits!(bodemag_ax, wlims, maglims)
+        limits!(bodephase_ax, wlims, phaselims)
         logw, logmag, phase
     end, sys) # TODO use nyquist instead to calculate this?
     bodemag_points = lift(x -> convert.(Point2f0, zip(x[1], x[2])), bodevars)
@@ -67,7 +89,7 @@ function run()
     nyquist_ax = layout[3:4, 2] = LAxis(scene, title = "Nyquist")
     nyquist_points = lift(sys -> begin
         a, b, _ = nyquistv(sys)
-        limits!(nyquist_ax, find_limits(a, b)...)
+        limits!(nyquist_ax, find_limits(a), find_limits(b))
         convert.(Point2f0, zip(a, b))
     end, sys)
     lines!(nyquist_ax, nyquist_points)
@@ -89,7 +111,7 @@ function run()
 
     mousestate = addmousestate!(root_ax.scene)
     onmouseleftdragstart(mousestate) do state
-        find_close(state.pos, poles[], zeros[], [1, 1])
+        root = find_close(state.pos, roots[], root_ax.limits[].widths ./ 100)
     end
     onmouseleftdrag(mousestate) do state
         println("drag")
@@ -99,10 +121,28 @@ function run()
     end
     onmouseleftclick(mousestate) do state
         # Find closest point, if point is within reasonable distance given scale select it
-        find_close(state.pos, poles[], zeros[], [1, 1])
+        root = find_close(state.pos, roots[], root_ax.limits[].widths ./ 50)
         # TODO set selected
+        unselect_all!(roots) # Unselects without sending out update
+        @show root
+        if !isnothing(root)
+            root.selected = true
+            #roots[] = roots[] # Update
+        end
+        @show root
     end
     onmouseleftdoubleclick(mousestate) do state
+        x = state.pos[1]
+        y = state.pos[2]
+        if abs(y) < root_ax.limits[].widths[2] / 100
+            y = 0
+        end
+        unselect_all!(roots) # Unselects without sending out update
+        newroot = Root(Point2f0(x, abs(y)), true, true) # Add new root and send update
+        @show newroot
+        push!(roots[], newroot)
+        @show roots
+        roots[] = roots[]
     end
 
     on(scene.events.keyboardbuttons) do button
@@ -111,9 +151,15 @@ function run()
             zeros[] = Array{Point{2, Float32}, 1}(undef, 0)
             # TODO set gain_slider to 1 also?
         elseif ispressed(button, Keyboard.space)
-            # TODO switch selected pole/zero
+            if selected_idx[] != 0
+                roots.val[selected_idx[]].pole = !selected[].pole
+                selected[] = selected[]
+            end
         elseif ispressed(button, Keyboard.delete)
-            # TODO remove selected
+            if selected_idx[] != 0
+                roots[] = [roots[][1:selected_idx[]-1]; roots[][selected_idx[]+1:end]]
+                selected_idx[] = 0
+            end
         end
     end
 

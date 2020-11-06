@@ -1,23 +1,21 @@
-function find_close(pos, poles, zeros, eps)
-    closest = [Inf, Inf]
-    for pole in poles[]
-        if sum(abs2, pole .- pos) < sum(abs2, closest .- pos)
-            closest = pole
+function find_close(pos, roots, eps)
+    pos = [pos[1], abs(pos[2])] # Root only has positive conjugate
+    closest = Root(Point2f0(Inf, Inf), false, false)
+    for root in roots
+        if sum(abs2, root.pos .- pos) < sum(abs2, closest.pos .- pos) 
+            closest = root
         end
     end
-    for zero in zeros[]
-        if sum(abs2, zero .- pos) < sum(abs2, closest .- pos)
-            closest = zero
-        end
-    end
-    eps = [0.5, 0.5] # Should be like (xlim, ylim) / 100 or smth
-    if all(abs.(closest .- pos) .< eps)
-        println(closest)
+    if all(abs.(closest.pos .- pos) .< eps)
+        @show closest
+        return closest
     else
         println("nothing")
     end
 end
 
+""" Root only contain the conjugate with positive imaginary part
+"""
 mutable struct Root
     pos::Point2f0
     pole::Bool
@@ -37,6 +35,17 @@ function get_poles(roots)
     return a
 end
 
+function to_points(roots)
+    a = Point2f0[]
+    for node in roots
+        push!(a, node.pos)
+        if node.pos[2] != 0
+            push!(a, node.pos .* [1, -1])
+        end
+    end
+    return a
+end
+
 function get_zeros(roots)
     a = Point2f0[]
     for node in roots
@@ -51,14 +60,16 @@ function get_zeros(roots)
 end
 
 function get_selected(roots)
-    a = Point2f0[]
-    for node in roots
-        if node.selected
-            push!(a, node.pos)
-            if node.pos[2] != 0
-                push!(a, node.pos .* [1, -1])
-            end
+    for i in eachindex(roots)
+        if roots[i].selected
+            return i
         end
     end
-    return a
+    return 0
+end
+
+function unselect_all!(roots)
+    for root in roots[]
+        root.selected = false
+    end
 end
