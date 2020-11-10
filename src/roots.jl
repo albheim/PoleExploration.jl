@@ -7,10 +7,7 @@ function find_close(pos, roots, eps)
         end
     end
     if all(abs.(closest.pos .- pos) .< eps)
-        @show closest
         return closest
-    else
-        println("nothing")
     end
 end
 

@@ -1,13 +1,17 @@
+module PoleExploration
+
 using AbstractPlotting.MakieLayout
 using Makie
 #using MakieTeX
 using ControlSystems
 using UnicodeFun
 
+export run
+
 include("roots.jl")
 include("plotting.jl")
 
-function run()
+function scenesetup()
     # Variables
     roots = Node(Root[Root(Point2f0(-1, 0), true, false)])
 
@@ -83,7 +87,7 @@ function run()
     nyquist_ax = layout[3:4, 2] = LAxis(scene, title = "Nyquist")
     nyquist_points = lift(sys -> begin
         a, b, _ = nyquistv(sys)
-        limits!(nyquist_ax, find_limits(a), find_limits(b))
+        limits!(nyquist_ax, find_limits(a, start=[-1, 1]), find_limits(b, start=[-1, 1]))
         convert.(Point2f0, zip(a, b))
     end, sys)
     lines!(nyquist_ax, nyquist_points)
@@ -114,7 +118,7 @@ function run()
         if !isnothing(root)
             root.selected = true
             roots[] = roots[] # Update
-            @show "selected", root
+            #@show "selected", root
         end
     end
     onmouseleftdoubleclick(mousestate) do state
@@ -163,4 +167,19 @@ function run()
     scene
 end
 
-scene = run()
+function start()
+    println("""
+    This is a tool for pole/zero exploration in control design. 
+
+    Double left click will add poles in the root locus.
+    Select roots with left click to modify them. 
+    * Space will switch between pole and zero 
+    * Right click moves the pole.
+    * Delete will remove the root.
+
+    Panning is done with left click. Zooming can be done with scroll or right click drag.
+    """)
+    scenesetup()
+end
+
+end
