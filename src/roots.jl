@@ -62,10 +62,14 @@ end
 function get_selected(roots)
     for i in eachindex(roots)
         if roots[i].selected
-            return i
+            if roots[i].pos[2] == 0
+                return i, Point2f0[roots[i].pos], roots[i].pole ? '+' : 'o'
+            else
+                return i, Point2f0[roots[i].pos, [1, -1] .* roots[i].pos], roots[i].pole ? '+' : 'o'
+            end
         end
     end
-    return 0
+    return 0, Point2f0[], '+'
 end
 
 function unselect_all!(roots)

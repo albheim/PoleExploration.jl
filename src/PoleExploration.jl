@@ -1,5 +1,6 @@
 using AbstractPlotting.MakieLayout
 using Makie
+#using MakieTeX
 using ControlSystems
 using UnicodeFun
 
@@ -12,21 +13,14 @@ function run()
 
     zeros = lift(get_zeros, roots)
     poles = lift(get_poles, roots)
-    gain = Node{Float32}(1.0)
+    gain = Node(1.0)
 
-    selected_idx = lift(get_selected, roots)
-    selected_pos = lift((x, i) -> begin
-        if i != 0
-            if x[i] != 0
-                return Point2f0[x[i].pos, [1, -1] .* x[i].pos]
-            else
-                return Point2f0[x[i].pos]
-            end
-        end
-    end, roots, selected_idx)
+    selected_data = lift(get_selected, roots)
+    selected_idx = lift(x -> x[1], selected_data)
+    selected_pos = lift(x -> x[2], selected_data)
+    selected_token = lift(x -> x[3], selected_data)
     
     sys = lift((z, p, k) -> begin
-        #@show zeros poles selected 
         zpk([a + b*im for (a, b) in z], [a + b*im for (a, b) in p], k)
     end, zeros, poles, gain)
 
@@ -38,8 +32,8 @@ function run()
     # Root locus
     root_ax = layout[1:2, 1] = LAxis(scene, title = "Root locus")
     scatter!(root_ax, poles, color=:red, marker='+', markersize=10)
-    #scatter!(root_ax, zeros, color=:red, marker='+', markersize=10)
-    #scatter!(root_ax, selected_pos, color=:green, marker='+', markersize=10)
+    scatter!(root_ax, zeros, color=:blue, marker='o', markersize=10)
+    scatter!(root_ax, selected_pos, color=:green, marker=selected_token, markersize=10)
 
     # Step plot
     step_ax = layout[3, 1] = LAxis(scene, title = "Step")
@@ -93,6 +87,7 @@ function run()
         convert.(Point2f0, zip(a, b))
     end, sys)
     lines!(nyquist_ax, nyquist_points)
+    lines!(nyquist_ax, cos.(0:0.01:2pi), sin.(0:0.01:2pi), color=:red)
 
     gain_slider = LSlider(scene, range=0.01:0.01:10, startvalue=gain[])
     gain_label = LText(scene, lift(x -> "K=$(x)", gain_slider.value))
@@ -107,29 +102,20 @@ function run()
         ControlSystems.print_siso(io, sys.matrix[1, 1])
         String(take!(io))[1:end-1]
     end, sys)
+    #tf_label = layout[0, 2] = MakieTeX.LTeX(scene, raw"\int \mathbf E \cdot d\mathbf a = \frac{Q_{encl}}{4\pi\epsilon_0}", tellwidth=false)
     tf_label = layout[0, 2] = LText(scene, text=tf_text, tellwidth=false)
 
     mousestate = addmousestate!(root_ax.scene)
-    onmouseleftdragstart(mousestate) do state
-        root = find_close(state.pos, roots[], root_ax.limits[].widths ./ 100)
-    end
-    onmouseleftdrag(mousestate) do state
-        println("drag")
-    end
-    onmouseleftdragstop(mousestate) do state
-        println("dragend")
-    end
     onmouseleftclick(mousestate) do state
         # Find closest point, if point is within reasonable distance given scale select it
         root = find_close(state.pos, roots[], root_ax.limits[].widths ./ 50)
         # TODO set selected
         unselect_all!(roots) # Unselects without sending out update
-        @show root
         if !isnothing(root)
             root.selected = true
-            #roots[] = roots[] # Update
+            roots[] = roots[] # Update
+            @show "selected", root
         end
-        @show root
     end
     onmouseleftdoubleclick(mousestate) do state
         x = state.pos[1]
@@ -139,24 +125,35 @@ function run()
         end
         unselect_all!(roots) # Unselects without sending out update
         newroot = Root(Point2f0(x, abs(y)), true, true) # Add new root and send update
-        @show newroot
-        push!(roots[], newroot)
-        @show roots
-        roots[] = roots[]
+        roots[] = push!(roots[], newroot)
+    end
+    onmouserightclick(mousestate) do state
+        if selected_idx[] != 0
+            x = state.pos[1]
+            y = state.pos[2]
+            if roots.val[selected_idx[]].pos[2] == 0                    
+                y = 0
+            else
+                y = abs(y)
+            end
+            roots.val[selected_idx[]].pos = Point2f0(x, y)
+            roots[] = roots[]
+        end
     end
 
     on(scene.events.keyboardbuttons) do button
         if ispressed(button, Keyboard.r)
-            poles[] = Point2f0[(-1, 0)]
-            zeros[] = Array{Point{2, Float32}, 1}(undef, 0)
+            roots = Node(Root[Root(Point2f0(-1, 0), true, false)])
             # TODO set gain_slider to 1 also?
         elseif ispressed(button, Keyboard.space)
             if selected_idx[] != 0
-                roots.val[selected_idx[]].pole = !selected[].pole
-                selected[] = selected[]
+                # TODO check so system is valid after change
+                roots.val[selected_idx[]].pole = !roots.val[selected_idx[]].pole
+                roots[] = roots[]
             end
         elseif ispressed(button, Keyboard.delete)
             if selected_idx[] != 0
+                # TODO check so system is valid after change
                 roots[] = [roots[][1:selected_idx[]-1]; roots[][selected_idx[]+1:end]]
                 selected_idx[] = 0
             end
