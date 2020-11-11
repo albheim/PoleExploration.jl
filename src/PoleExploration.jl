@@ -6,7 +6,7 @@ using Makie
 using ControlSystems
 using UnicodeFun
 
-export run
+export start
 
 include("roots.jl")
 include("plotting.jl")
@@ -101,11 +101,7 @@ function scenesetup()
     layout[0, 1] = hbox!(gain_slider, gain_label)
 
     # Other
-    tf_text = lift(sys -> begin
-        io = IOBuffer()
-        ControlSystems.print_siso(io, sys.matrix[1, 1])
-        String(take!(io))[1:end-1]
-    end, sys)
+    tf_text = lift(print_tf, roots, gain)
     #tf_label = layout[0, 2] = MakieTeX.LTeX(scene, raw"\int \mathbf E \cdot d\mathbf a = \frac{Q_{encl}}{4\pi\epsilon_0}", tellwidth=false)
     tf_label = layout[0, 2] = LText(scene, text=tf_text, tellwidth=false)
 
