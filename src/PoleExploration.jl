@@ -2,7 +2,6 @@ module PoleExploration
 
 using AbstractPlotting.MakieLayout
 using Makie
-#using MakieTeX
 using ControlSystems
 using UnicodeFun
 
@@ -31,16 +30,18 @@ function scenesetup()
     # Parent scene
     outer_padding = 30
     scene, layout = layoutscene(outer_padding, resolution = (1200, 1000), backgroundcolor = RGBf0(0.98, 0.98, 0.98))
-    # update_limits!(scene, )
+
+    # General settings
+    kwargs = Dict(:xtickalign => 1, :ytickalign => 1)
 
     # Root locus
-    root_ax = layout[1:2, 1] = LAxis(scene, title = "Root locus")
+    root_ax = layout[1:2, 1] = LAxis(scene; title = "Root locus", kwargs...)
     scatter!(root_ax, poles, color=:red, marker='+', markersize=10)
-    scatter!(root_ax, zeros, color=:blue, marker='o', markersize=10)
+    scatter!(root_ax, zeros, color=:red, marker='o', markersize=10)
     scatter!(root_ax, selected_pos, color=:green, marker=selected_token, markersize=10)
 
     # Step plot
-    step_ax = layout[3, 1] = LAxis(scene, title = "Step")
+    step_ax = layout[3, 1] = LAxis(scene; title = "Step", kwargs...)
     step_points = lift(sys -> begin
         y, t, x = step(sys)
         limits!(step_ax, find_limits(t), find_limits(y))
@@ -49,7 +50,7 @@ function scenesetup()
     lines!(step_ax, step_points)
 
     # Impulse plot
-    impulse_ax = layout[4, 1] = LAxis(scene, title = "Impulse")
+    impulse_ax = layout[4, 1] = LAxis(scene; title = "Impulse", kwargs...)
     impulse_points = lift(sys -> begin
         y, t, x = impulse(sys)
         limits!(impulse_ax, find_limits(t), find_limits(y))
@@ -59,8 +60,8 @@ function scenesetup()
     lines!(impulse_ax, impulse_points)
 
     # Bode plot
-    bodemag_ax = layout[1, 2] = LAxis(scene, title = "Magnitude")
-    bodephase_ax = layout[2, 2] = LAxis(scene, title = "Phase")
+    bodemag_ax = layout[1, 2] = LAxis(scene; title = "Magnitude", kwargs...)
+    bodephase_ax = layout[2, 2] = LAxis(scene; title = "Phase", kwargs...)
     linkxaxes!(bodemag_ax, bodephase_ax)
     bodevars = lift(sys -> begin
         mag, phase, w = bode(sys)
@@ -84,7 +85,7 @@ function scenesetup()
     lines!(bodephase_ax, bodephase_points)
 
     # Nyquist plot
-    nyquist_ax = layout[3:4, 2] = LAxis(scene, title = "Nyquist")
+    nyquist_ax = layout[3:4, 2] = LAxis(scene; title = "Nyquist", kwargs...)
     nyquist_points = lift(sys -> begin
         a, b, _ = nyquistv(sys)
         limits!(nyquist_ax, find_limits(a, start=[-1, 1]), find_limits(b, start=[-1, 1]))
@@ -93,7 +94,7 @@ function scenesetup()
     lines!(nyquist_ax, nyquist_points)
     lines!(nyquist_ax, cos.(0:0.01:2pi), sin.(0:0.01:2pi), color=:red)
 
-    gain_slider = LSlider(scene, range=0.01:0.01:10, startvalue=gain[])
+    gain_slider = LSlider(scene, range=-10:0.01:10, startvalue=gain[])
     gain_label = LText(scene, lift(x -> "K=$(x)", gain_slider.value))
     on(gain_slider.value) do value
         gain[] = value
@@ -165,15 +166,16 @@ end
 
 function start()
     println("""
-    This is a tool for pole/zero exploration in control design. 
+    This is a tool for pole/zero exploration.
 
     Double left click will add poles in the root locus.
     Select roots with left click to modify them. 
-    * Space will switch between pole and zero 
-    * Right click moves the pole.
-    * Delete will remove the root.
+    * Space will switch between pole and zero for the selected root.
+    * Right click moves the selected root.
+    * Delete will remove the selected root.
 
     Panning is done with left click. Zooming can be done with scroll or right click drag.
+    Zooming or panning while holding x or y will constrain the zoom/pan to that axis.
     """)
     scenesetup()
 end
