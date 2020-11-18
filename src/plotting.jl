@@ -52,6 +52,9 @@ function print_tf(roots, gain)
         denstr = "(" * join(den, ")(") * ")"
     end
 
+    gainstr = "$(round(gain, sigdigits=3)) "
+    gainpre = "$(repeat(" ", length(gainstr)))"
+
     # Figure out the length of the separating line
     len_num = length(numstr)
     len_den = length(denstr)
@@ -63,7 +66,7 @@ function print_tf(roots, gain)
     else
         denstr = "$(repeat(" ", div(dashcount - len_den, 2)))$denstr"
     end
-    return to_latex(numstr) * "\n" * repeat("-", dashcount) * "\n" * to_latex(denstr)
+    return gainpre * to_latex(numstr) * "\n " * gainstr * repeat("-", dashcount) * "\n " * gainpre * to_latex(denstr)
 end
 
 function printroot(z)

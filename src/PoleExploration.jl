@@ -32,7 +32,7 @@ function scenesetup()
     scene, layout = layoutscene(outer_padding, resolution = (1200, 1000), backgroundcolor = RGBf0(0.98, 0.98, 0.98))
 
     # General settings
-    kwargs = Dict(:xtickalign => 1, :ytickalign => 1)
+    kwargs = Dict(:xtickalign => 1, :ytickalign => 1, :yticklabelspace => 25)
 
     # Root locus
     root_ax = layout[1:2, 1] = LAxis(scene; title = "Root locus", kwargs...)
@@ -99,12 +99,12 @@ function scenesetup()
     on(gain_slider.value) do value
         gain[] = value
     end
-    layout[0, 1] = hbox!(gain_slider, gain_label)
+    layout[0, 1:2] = hbox!(gain_slider, gain_label)
 
     # Other
     tf_text = lift(print_tf, roots, gain)
     #tf_label = layout[0, 2] = MakieTeX.LTeX(scene, raw"\int \mathbf E \cdot d\mathbf a = \frac{Q_{encl}}{4\pi\epsilon_0}", tellwidth=false)
-    tf_label = layout[0, 2] = LText(scene, text=tf_text, tellwidth=false)
+    tf_label = layout[0, 1:2] = LText(scene, text=tf_text, tellwidth=false, font="Courier")
 
     mousestate = addmousestate!(root_ax.scene)
     onmouseleftclick(mousestate) do state
@@ -144,20 +144,30 @@ function scenesetup()
 
     on(scene.events.keyboardbuttons) do button
         if ispressed(button, Keyboard.r)
-            roots = Node(Root[Root(Point2f0(-1, 0), true, false)])
-            # TODO set gain_slider to 1 also?
+            roots[] = Root[Root(Point2f0(-1, 0), true, false)]
+            set_close_to!(gain_slider, 1.0)
+            autolimits!(root_ax)
         elseif ispressed(button, Keyboard.space)
             if selected_idx[] != 0
-                # TODO check so system is valid after change
-                roots.val[selected_idx[]].pole = !roots.val[selected_idx[]].pole
-                roots[] = roots[]
+                if roots.val[selected_idx[]].pole && length(poles[]) - length(zeros[]) < 2 * (1 + (roots.val[selected_idx[]].pos[2] != 0))
+                    println("Can't change that since it would create an system with more poles than zeros.")
+                else
+                    roots.val[selected_idx[]].pole = !roots.val[selected_idx[]].pole
+                    roots[] = roots[]
+                end
             end
         elseif ispressed(button, Keyboard.delete)
             if selected_idx[] != 0
-                # TODO check so system is valid after change
-                roots[] = [roots[][1:selected_idx[]-1]; roots[][selected_idx[]+1:end]]
-                selected_idx[] = 0
+                if roots.val[selected_idx[]].pole && length(poles[]) - length(zeros[]) < (1 + (roots.val[selected_idx[]].pos[2] != 0))
+                    println("Can't remove that since it would create an system with more poles than zeros.")
+                else
+                    roots[] = [roots[][1:selected_idx[]-1]; roots[][selected_idx[]+1:end]]
+                    selected_idx[] = 0
+                end
             end
+        elseif ispressed(button, Keyboard.z)
+            sys[] = sys[]
+            autolimits!(root_ax)
         end
     end
 
@@ -176,6 +186,9 @@ function start()
 
     Panning is done with left click. Zooming can be done with scroll or right click drag.
     Zooming or panning while holding x or y will constrain the zoom/pan to that axis.
+    Pressing z will reset all zoom/pan to the automatic value.
+    
+    Pressing r will reset everything to the start configuration.
     """)
     scenesetup()
 end
