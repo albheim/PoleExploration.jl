@@ -2,11 +2,23 @@
 
 A simple GUI for playing around with poles and zeros and visualize how step/impulse/bode/nyquist plots change.
 
+# News
+
+Currently it is not working with recent versions of Makie. Instantiate the environment to be sure that versions are compatible.
+
+```julia
+using Pkg
+Pkg.develop(url="https://github.com/albheim/PoleExploration")
+Pkg.activate(joinpath(Base.DEPOT_PATH[1], "dev", "PoleExploration"))
+Pkg.instantiate()
+using PoleExploration
+start()
+```
+
 # Installation
 
 ```julia
-julia> ]
-pkg> add https://github.com/albheim/PoleExploration
+julia> ] add https://github.com/albheim/PoleExploration
 ```
 
 # Usage 
