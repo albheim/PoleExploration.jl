@@ -1,9 +1,11 @@
 function log_ticks(loglims)
     a = round(loglims[1], RoundDown)
     b = round(loglims[2], RoundUp)
+    @show a b
     v = log10.(1:9)
     ticks = vcat([i .+ a .+ v for i in 0:b-a]..., [b])
-    labels = [tick == round(tick) ? to_latex("10^{$(round(Int, tick))}") : " " for tick in ticks]
+    @show ticks
+    labels = [tick == round(tick) ? L"10^{%$(round(Int, tick))}" : " " for tick in ticks]
     return ticks, labels
 end
 
@@ -53,20 +55,8 @@ function print_tf(roots, gain)
     end
 
     gainstr = "$(round(gain, sigdigits=3)) "
-    gainpre = "$(repeat(" ", length(gainstr)))"
 
-    # Figure out the length of the separating line
-    len_num = length(numstr)
-    len_den = length(denstr)
-    dashcount = max(len_num, len_den)
-
-    # Center the numerator or denominator
-    if len_num < dashcount
-        numstr = "$(repeat(" ", div(dashcount - len_num, 2)))$numstr"
-    else
-        denstr = "$(repeat(" ", div(dashcount - len_den, 2)))$denstr"
-    end
-    return gainpre * to_latex(numstr) * "\n " * gainstr * repeat("-", dashcount) * "\n " * gainpre * to_latex(denstr)
+    return L"%$(gainstr)\cdot \frac{%$numstr}{%$denstr}"
 end
 
 function printroot(z)
