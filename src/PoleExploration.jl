@@ -63,24 +63,15 @@ function scenesetup()
     bodemag_ax = Axis(fig[1, 2]; title = "Magnitude", yscale=log10, xscale=log10, kwargs...)
     bodephase_ax = Axis(fig[2, 2]; title = "Phase", xscale=log10, kwargs...)
     linkxaxes!(bodemag_ax, bodephase_ax)
-    # bodevars = lift(sys -> begin
-    #     mag, phase, w = bode(sys)
-    #     logmag = log10.(mag)
-    #     logw = log10.(w)
-    #     wlims = find_limits(logw)
-    #     maglims = find_limits(logmag)
-    #     phaselims = find_limits(phase)
-    #     wticks = log_ticks(wlims)
-    #     magticks = log_ticks(maglims)
-    #     bodemag_ax.xticks = wticks
-    #     bodemag_ax.yticks = magticks
-    #     bodephase_ax.xticks = wticks
-    #     limits!(bodemag_ax, wlims, maglims)
-    #     limits!(bodephase_ax, wlims, phaselims)
-    #     logw, logmag, phase
-    # end, sys) # TODO use nyquist instead to calculate this?
     bodevars = lift(sys -> begin
         mag, phase, w = bodev(sys)
+        logmag = log10.(mag)
+        logw = log10.(w)
+        wlims = find_limits(logw)
+        maglims = find_limits(logmag)
+        phaselims = find_limits(phase)
+        limits!(bodemag_ax, exp10.(wlims), exp10.(maglims))
+        limits!(bodephase_ax, exp10.(wlims), phaselims)
         w, mag, phase
     end, sys) # TODO use nyquist instead to calculate this?
     bodemag_points = lift(x -> convert.(Point2f, zip(x[1], x[2])), bodevars)
@@ -107,17 +98,15 @@ function scenesetup()
 
     # Other
     tf_text = lift(print_tf, roots, gain)
-    #tf_label = layout[0, 2] = MakieTeX.LTeX(scene, raw"\int \mathbf E \cdot d\mathbf a = \frac{Q_{encl}}{4\pi\epsilon_0}", tellwidth=false)
-    tf_label = Label(fig[0, 2], text=tf_text, tellwidth=false)#, font="Courier")
-    #Label(fig[-1, 1], text=L"2a\cdot\frac{\int_3^4\sin(t)dt}{33}")
+    tf_label = Label(fig[0, 2], text=tf_text, tellwidth=false)
 
     mousestate = addmouseevents!(root_ax.scene)
     onmouseleftclick(mousestate) do state
         # Find closest point, if point is within reasonable distance given scale select it
         root = find_close(state.data, roots[], root_ax.finallimits[].widths ./ 50)
         # TODO set selected
-        unselect_all!(roots) # Unselects without sending out update
         if !isnothing(root)
+            unselect_all!(roots) # Unselects without sending out update
             root.selected = true
             roots[] = roots[] # Update
             #@show "selected", root
