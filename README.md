@@ -29,3 +29,9 @@ Left click will select a root (pole/zero), when selected you can:
 * Remove it with delete.
 
 Zooming is done with scroll or left click drag, panning is done with right click drag. Holding x or y while doing these actions will constrain them to only x or y axis.
+
+# Problems
+There is some problem with `GLFW.jl` on some computers resulting in an error along the lines of `libGL error: MESA-LOADER: failed to open iris: ...`, this can be worked around by telling julia to use the local `libstdc++` version instead of its own
+```bash
+export LD_PRELOAD=/usr/lib64/libstdc++.so.6 julia --project -e "using PoleExploration; start()"
+```
