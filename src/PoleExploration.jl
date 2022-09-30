@@ -169,7 +169,6 @@ function scenesetup()
 
     fig
 end
-fig = scenesetup()
 
 function start()
     println("""
@@ -187,7 +186,8 @@ function start()
     
     Pressing r will reset everything to the start configuration.
     """)
-    scenesetup()
+    fig = scenesetup()
+    wait(display(fig))
 end
 
 end
