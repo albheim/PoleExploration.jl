@@ -28,12 +28,11 @@ function start()
     This is a tool for pole/zero exploration.
 
     Double left click will add poles in the root locus.
-    Select roots with left click to modify them. 
+    Select roots with left click to drag or modify them. 
     * Space will switch between pole and zero for the selected root.
-    * Right click moves the selected root.
     * Delete will remove the selected root.
 
-    Panning is done with left click. Zooming can be done with scroll or right click drag.
+    Panning is done with right click. Zooming can be done with scroll or left click drag.
     Zooming or panning while holding x or y will constrain the zoom/pan to that axis.
     Pressing z will reset all zoom/pan to the automatic value.
     

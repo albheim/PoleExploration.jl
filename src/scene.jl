@@ -1,4 +1,16 @@
+
 function scenesetup()
+    set_window_config!(;
+        #renderloop = renderloop,
+        #vsync = false,
+        #framerate = 30.0,
+        #float = false,
+        #pause_rendering = false,
+        #focus_on_show = false,
+        #decorated = true,
+        title = "Pole Exploration"
+    )
+
     # Parent scene
     fig = Figure(resolution = (1200, 1000), backgroundcolor = RGBf(0.98, 0.98, 0.98))
 
@@ -16,21 +28,32 @@ function scenesetup()
     selected_token = lift(x -> x[3], selected_data)
     
     sys = lift((z, p, k, d) -> begin
-        if d != 0
-            delay(d) * zpk([a + b*im for (a, b) in z], [a + b*im for (a, b) in p], k)
-        else
+        if d == 0 # It does not like delay(0) so better to special case them
             zpk([a + b*im for (a, b) in z], [a + b*im for (a, b) in p], k)
+        else
+            delay(d) * zpk([a + b*im for (a, b) in z], [a + b*im for (a, b) in p], k)
         end
     end, zeros, poles, gain, outputdelay)
 
+    # Layout
+    slider_box = fig[1, 1] = GridLayout()
+    tf_box = fig[1, 2] = GridLayout()
+    root_ax = Axis(fig[2:3, 1]; title = "System roots ($POLE_MARKER) and zeros ($ZERO_MARKER)")
+    step_ax = Axis(fig[4, 1]; title = "System step response")
+    impulse_ax = Axis(fig[5, 1]; title = "System impulse response")
+    bodemag_ax = Axis(fig[2, 2]; title = "Bode magnitude", yscale=log10, xscale=log10)
+    bodephase_ax = Axis(fig[3, 2]; title = "Bode phase", xscale=log10)
+    nyquist_ax = Axis(fig[4:5, 2]; title = "Nyquist diagram")
+
+    # Plots
+
     # Root locus
-    root_ax = Axis(fig[1:2, 1]; title = "System roots ($POLE_MARKER) and zeros ($ZERO_MARKER)")
     scatter!(root_ax, poles, color=:black, marker=POLE_MARKER, markersize=12)
     scatter!(root_ax, zeros, color=:black, marker=ZERO_MARKER, markersize=12)
     scatter!(root_ax, selected_pos, color=:red, marker=selected_token, markersize=12)
+    xlims!(root_ax, high=1)
 
     # Step plot
-    step_ax = Axis(fig[3, 1]; title = "System step response")
     step_points = lift(sys -> begin
         y, t, x = step(sys)
         limits!(step_ax, find_limits(t), find_limits(y))
@@ -39,7 +62,6 @@ function scenesetup()
     lines!(step_ax, step_points)
 
     # Impulse plot
-    impulse_ax = Axis(fig[4, 1]; title = "System impulse response")
     impulse_points = lift(sys -> begin
         y, t, x = impulse(sys)
         limits!(impulse_ax, find_limits(t), find_limits(y))
@@ -49,8 +71,6 @@ function scenesetup()
     lines!(impulse_ax, impulse_points)
 
     # Bode plot
-    bodemag_ax = Axis(fig[1, 2]; title = "Bode magnitude", yscale=log10, xscale=log10)
-    bodephase_ax = Axis(fig[2, 2]; title = "Bode phase", xscale=log10)
     linkxaxes!(bodemag_ax, bodephase_ax)
     bodevars = lift(sys -> begin
         mag, phase, w = bodev(sys)
@@ -69,17 +89,16 @@ function scenesetup()
     lines!(bodephase_ax, bodephase_points)
 
     # Nyquist plot
-    nyquist_ax = Axis(fig[3:4, 2]; title = "Nyquist diagram")
     nyquist_points = lift(sys -> begin
         a, b, _ = nyquistv(sys)
         limits!(nyquist_ax, find_limits(a, start=[-1, 1]), find_limits(b, start=[-1, 1]))
         convert.(Point2f, zip(a, b))
     end, sys)
     lines!(nyquist_ax, nyquist_points)
-    lines!(nyquist_ax, cos.(0:0.01:2pi), sin.(0:0.01:2pi), color=:red, linestyle=:dash)
+    lines!(nyquist_ax, cos.(0:0.01:2pi), sin.(0:0.01:2pi), color=:gray, linestyle=:dash)
+    scatter!(nyquist_ax, -1, 0, marker='+', color=:red, markersize=12)
 
     # Sliders
-    slider_box = fig[0, 1] = GridLayout()
     gain_slider = Slider(slider_box[1, 1], range=-10:0.01:10, startvalue=gain[])
     gain_label = Label(slider_box[1, 2], text = lift(x -> "K=$(x)", gain_slider.value), textsize=20)
     on(gain_slider.value) do value
@@ -93,29 +112,30 @@ function scenesetup()
 
     # Display transfer function
     tf_text = lift(print_tf, roots, gain, outputdelay)
-    tf_label = Label(fig[0, 2], text=tf_text, tellwidth=false)
+    tf_label = Label(tf_box[1, 1], text=tf_text, tellwidth=false)
 
+    # Interaction
+    deregister_interaction!(root_ax, :rectanglezoom) # To allow for dragging roots
     mousestate = addmouseevents!(root_ax.scene)
     onmouseleftclick(mousestate) do state
         # Find closest point, if point is within reasonable distance given scale select it
         root = find_close(state.data, roots[], root_ax.finallimits[].widths ./ 50)
-        if !isnothing(root)
-            unselect_all!(roots) # Unselects without sending out update
-            root.selected = true
-            roots[] = roots[] # Update only here to reduce redraw cost
-        end
-    end
-    onmouseleftdoubleclick(mousestate) do state
-        x = state.data[1]
-        y = state.data[2]
-        if abs(y) < root_ax.finallimits[].widths[2] / 100
-            y = 0
-        end
         unselect_all!(roots) # Unselects without sending out update
-        newroot = Root(Point2f(x, abs(y)), true, true) # Add new root and send update
-        roots[] = push!(roots[], newroot)
+        if !isnothing(root)
+            root.selected = true
+        end
+        roots[] = roots[] # Update only here to reduce redraw cost
     end
-    onmouserightclick(mousestate) do state
+    onmouseleftdragstart(mousestate) do state
+        # Find closest point, if point is within reasonable distance given scale select it
+        root = find_close(state.data, roots[], root_ax.finallimits[].widths ./ 50)
+        unselect_all!(roots) # Unselects without sending out update
+        if !isnothing(root)
+            root.selected = true
+        end
+        roots[] = roots[] # Update only here to reduce redraw cost
+    end
+    onmouseleftdrag(mousestate) do state
         if selected_idx[] != 0
             x = state.data[1]
             y = state.data[2]
@@ -128,12 +148,23 @@ function scenesetup()
             roots[] = roots[]
         end
     end
+    onmouseleftdoubleclick(mousestate) do state
+        x = state.data[1]
+        y = state.data[2]
+        if abs(y) < root_ax.finallimits[].widths[2] / 100
+            y = 0
+        end
+        unselect_all!(roots) # Unselects without sending out update
+        newroot = Root(Point2f(x, abs(y)), true, true) # Add new root and send update
+        roots[] = push!(roots[], newroot)
+    end
 
     on(events(fig).keyboardbutton) do event
         if event.action == Keyboard.press || event.action == Keyboard.repeat
             if event.key == Keyboard.r
                 roots[] = Root[Root(Point2f(-1, 0), true, false)]
                 set_close_to!(gain_slider, 1.0)
+                set_close_to!(delay_slider, 0.0)
                 autolimits!(root_ax)
             elseif event.key == Keyboard.space
                 if selected_idx[] != 0
@@ -156,6 +187,7 @@ function scenesetup()
             elseif event.key == Keyboard.z
                 sys[] = sys[]
                 autolimits!(root_ax)
+                xlims!(root_ax, high=1)
             end
         end
     end

@@ -54,7 +54,7 @@ function print_tf(roots, gain, delay)
         denstr = "(" * join(den, ")(") * ")"
     end
 
-    return L"%$(round(gain, sigdigits=3))\cdot\frac{%$numstr}{%$denstr}e^{-%$(round(delay, sigdigits=3))s}"
+    return L"%$(round(gain, sigdigits=3))e^{-%$(round(delay, sigdigits=3))s}\cdot\frac{%$numstr}{%$denstr}"
 end
 
 function printroot(z)
