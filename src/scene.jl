@@ -8,24 +8,29 @@ function scenesetup()
     zeros = lift(get_zeros, roots)
     poles = lift(get_poles, roots)
     gain = Observable(1.0)
+    outputdelay = Observable(1.0)
 
     selected_data = lift(get_selected, roots)
     selected_idx = lift(x -> x[1], selected_data)
     selected_pos = lift(x -> x[2], selected_data)
     selected_token = lift(x -> x[3], selected_data)
     
-    sys = lift((z, p, k) -> begin
-        zpk([a + b*im for (a, b) in z], [a + b*im for (a, b) in p], k)
-    end, zeros, poles, gain)
+    sys = lift((z, p, k, d) -> begin
+        if d != 0
+            delay(d) * zpk([a + b*im for (a, b) in z], [a + b*im for (a, b) in p], k)
+        else
+            zpk([a + b*im for (a, b) in z], [a + b*im for (a, b) in p], k)
+        end
+    end, zeros, poles, gain, outputdelay)
 
     # Root locus
-    root_ax = Axis(fig[1:2, 1]; title = "Root locus")
+    root_ax = Axis(fig[1:2, 1]; title = "System roots ($POLE_MARKER) and zeros ($ZERO_MARKER)")
     scatter!(root_ax, poles, color=:black, marker=POLE_MARKER, markersize=12)
     scatter!(root_ax, zeros, color=:black, marker=ZERO_MARKER, markersize=12)
     scatter!(root_ax, selected_pos, color=:red, marker=selected_token, markersize=12)
 
     # Step plot
-    step_ax = Axis(fig[3, 1]; title = "Step")
+    step_ax = Axis(fig[3, 1]; title = "System step response")
     step_points = lift(sys -> begin
         y, t, x = step(sys)
         limits!(step_ax, find_limits(t), find_limits(y))
@@ -34,7 +39,7 @@ function scenesetup()
     lines!(step_ax, step_points)
 
     # Impulse plot
-    impulse_ax = Axis(fig[4, 1]; title = "Impulse")
+    impulse_ax = Axis(fig[4, 1]; title = "System impulse response")
     impulse_points = lift(sys -> begin
         y, t, x = impulse(sys)
         limits!(impulse_ax, find_limits(t), find_limits(y))
@@ -44,8 +49,8 @@ function scenesetup()
     lines!(impulse_ax, impulse_points)
 
     # Bode plot
-    bodemag_ax = Axis(fig[1, 2]; title = "Magnitude", yscale=log10, xscale=log10)
-    bodephase_ax = Axis(fig[2, 2]; title = "Phase", xscale=log10)
+    bodemag_ax = Axis(fig[1, 2]; title = "Bode magnitude", yscale=log10, xscale=log10)
+    bodephase_ax = Axis(fig[2, 2]; title = "Bode phase", xscale=log10)
     linkxaxes!(bodemag_ax, bodephase_ax)
     bodevars = lift(sys -> begin
         mag, phase, w = bodev(sys)
@@ -64,7 +69,7 @@ function scenesetup()
     lines!(bodephase_ax, bodephase_points)
 
     # Nyquist plot
-    nyquist_ax = Axis(fig[3:4, 2]; title = "Nyquist")
+    nyquist_ax = Axis(fig[3:4, 2]; title = "Nyquist diagram")
     nyquist_points = lift(sys -> begin
         a, b, _ = nyquistv(sys)
         limits!(nyquist_ax, find_limits(a, start=[-1, 1]), find_limits(b, start=[-1, 1]))
@@ -73,15 +78,21 @@ function scenesetup()
     lines!(nyquist_ax, nyquist_points)
     lines!(nyquist_ax, cos.(0:0.01:2pi), sin.(0:0.01:2pi), color=:red, linestyle=:dash)
 
-    gain_box = fig[0, 1] = GridLayout()
-    gain_slider = Slider(gain_box[1, 1], range=-10:0.01:10, startvalue=gain[])
-    gain_label = Label(gain_box[1, 2], text = lift(x -> "K=$(x)", gain_slider.value), textsize=20)
+    # Sliders
+    slider_box = fig[0, 1] = GridLayout()
+    gain_slider = Slider(slider_box[1, 1], range=-10:0.01:10, startvalue=gain[])
+    gain_label = Label(slider_box[1, 2], text = lift(x -> "K=$(x)", gain_slider.value), textsize=20)
     on(gain_slider.value) do value
         gain[] = value
     end
+    delay_slider = Slider(slider_box[2, 1], range=0:0.01:10, startvalue=gain[])
+    delay_label = Label(slider_box[2, 2], text = lift(x -> "Output delay $(x)", delay_slider.value), textsize=20)
+    on(delay_slider.value) do value
+        outputdelay[] = value
+    end
 
-    # Other
-    tf_text = lift(print_tf, roots, gain)
+    # Display transfer function
+    tf_text = lift(print_tf, roots, gain, outputdelay)
     tf_label = Label(fig[0, 2], text=tf_text, tellwidth=false)
 
     mousestate = addmouseevents!(root_ax.scene)

@@ -25,7 +25,7 @@ function find_limits(vals; start=[first(vals), first(vals)], margins=0.05)
     return vmin, vmax
 end
 
-function print_tf(roots, gain)
+function print_tf(roots, gain, delay)
     # Convert the numerator and denominator to strings
     num = []
     den = []
@@ -54,9 +54,7 @@ function print_tf(roots, gain)
         denstr = "(" * join(den, ")(") * ")"
     end
 
-    gainstr = "$(round(gain, sigdigits=3)) "
-
-    return L"%$(gainstr)\cdot \frac{%$numstr}{%$denstr}"
+    return L"%$(round(gain, sigdigits=3))\cdot\frac{%$numstr}{%$denstr}e^{-%$(round(delay, sigdigits=3))s}"
 end
 
 function printroot(z)
