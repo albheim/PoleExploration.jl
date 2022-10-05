@@ -20,7 +20,7 @@ function scenesetup()
     zeros = lift(get_zeros, roots)
     poles = lift(get_poles, roots)
     gain = Observable(1.0)
-    outputdelay = Observable(1.0)
+    outputdelay = Observable(0.0)
 
     selected_data = lift(get_selected, roots)
     selected_idx = lift(x -> x[1], selected_data)
@@ -28,8 +28,8 @@ function scenesetup()
     selected_token = lift(x -> x[3], selected_data)
     
     sys = lift((z, p, k, d) -> begin
-        if d == 0 # It does not like delay(0) so better to special case them
-            zpk([a + b*im for (a, b) in z], [a + b*im for (a, b) in p], k)
+        if d == 0 # It does not seem to like delay(0) for speed so better to special case them
+            DelayLtiSystem(zpk([a + b*im for (a, b) in z], [a + b*im for (a, b) in p], k)) # Convert to make types same
         else
             delay(d) * zpk([a + b*im for (a, b) in z], [a + b*im for (a, b) in p], k)
         end
@@ -39,8 +39,8 @@ function scenesetup()
     slider_box = fig[1, 1] = GridLayout()
     tf_box = fig[1, 2] = GridLayout()
     root_ax = Axis(fig[2:3, 1]; title = "System roots ($POLE_MARKER) and zeros ($ZERO_MARKER)")
-    step_ax = Axis(fig[4, 1]; title = "System step response")
-    impulse_ax = Axis(fig[5, 1]; title = "System impulse response")
+    step_ax = Axis(fig[4:5, 1]; title = "System step response")
+    # impulse_ax = Axis(fig[5, 1]; title = "System impulse response")
     bodemag_ax = Axis(fig[2, 2]; title = "Bode magnitude", yscale=log10, xscale=log10)
     bodephase_ax = Axis(fig[3, 2]; title = "Bode phase", xscale=log10)
     nyquist_ax = Axis(fig[4:5, 2]; title = "Nyquist diagram")
@@ -62,13 +62,13 @@ function scenesetup()
     lines!(step_ax, step_points)
 
     # Impulse plot
-    impulse_points = lift(sys -> begin
-        y, t, x = impulse(sys)
-        limits!(impulse_ax, find_limits(t), find_limits(y))
-        #axes[4].xticks = 0:pi:2pi
-        convert.(Point2f, zip(t, vec(y)))
-    end, sys)
-    lines!(impulse_ax, impulse_points)
+    # impulse_points = lift(sys -> begin
+    #     y, t, x = impulse(sys)
+    #     limits!(impulse_ax, find_limits(t), find_limits(y))
+    #     #axes[4].xticks = 0:pi:2pi
+    #     convert.(Point2f, zip(t, vec(y)))
+    # end, sys)
+    # lines!(impulse_ax, impulse_points)
 
     # Bode plot
     linkxaxes!(bodemag_ax, bodephase_ax)
@@ -104,7 +104,7 @@ function scenesetup()
     on(gain_slider.value) do value
         gain[] = value
     end
-    delay_slider = Slider(slider_box[2, 1], range=0:0.01:10, startvalue=gain[])
+    delay_slider = Slider(slider_box[2, 1], range=0:0.01:2, startvalue=gain[])
     delay_label = Label(slider_box[2, 2], text = lift(x -> "Output delay $(x)", delay_slider.value), textsize=20)
     on(delay_slider.value) do value
         outputdelay[] = value
