@@ -27,13 +27,7 @@ function scenesetup()
     selected_pos = lift(x -> x[2], selected_data)
     selected_token = lift(x -> x[3], selected_data)
     
-    sys = lift((z, p, k, d) -> begin
-        if d == 0 # It does not seem to like delay(0) for speed so better to special case them
-            DelayLtiSystem(zpk([a + b*im for (a, b) in z], [a + b*im for (a, b) in p], k)) # Convert to make types same
-        else
-            delay(d) * zpk([a + b*im for (a, b) in z], [a + b*im for (a, b) in p], k)
-        end
-    end, zeros, poles, gain, outputdelay)
+    sys = lift(create_system, zeros, poles, gain, outputdelay)
 
     # Layout
     slider_box = fig[1, 1] = GridLayout()
@@ -104,7 +98,7 @@ function scenesetup()
     on(gain_slider.value) do value
         gain[] = value
     end
-    delay_slider = Slider(slider_box[2, 1], range=0:0.01:2, startvalue=gain[])
+    delay_slider = Slider(slider_box[2, 1], range=0:0.01:2, startvalue=outputdelay[])
     delay_label = Label(slider_box[2, 2], text = lift(x -> "Output delay $(x)", delay_slider.value), textsize=20)
     on(delay_slider.value) do value
         outputdelay[] = value
