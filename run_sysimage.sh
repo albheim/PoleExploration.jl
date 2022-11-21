@@ -9,4 +9,4 @@ if ! [ -f "build/custom_sysimage.so" ]; then
 fi
 
 echo "Starting Pole Exploration"
-julia --project -J build/custom_sysimage.so -e "using PoleExploration; start()"
+julia --project -J build/custom_sysimage.so -e "using PoleExploration; PoleExploration.run()"

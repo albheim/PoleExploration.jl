@@ -11,13 +11,13 @@ julia> ] add https://github.com/albheim/PoleExploration.jl
 # Usage 
 Either start it from a running julia REPL like
 ```julia-repl
-julia> using PoleExploration
+julia> import PoleExploration
 
-julia> start()
+julia> PoleExploration.run()
 ```
 or from the command line like
 ```
-julia -e "using PoleExploration; start()"
+julia -e "import PoleExploration; PoleExploration.run()"
 ```
 
 This will start a GUI where you can interact with poles/zeros. 

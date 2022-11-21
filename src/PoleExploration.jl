@@ -3,8 +3,6 @@ module PoleExploration
 using GLMakie
 using ControlSystems
 
-export start
-
 include("roots.jl")
 include("plotting.jl")
 include("scene.jl")
@@ -23,7 +21,7 @@ using SnoopPrecompile
     end
 end
 
-function start()
+function run()
     println("""
     This is a tool for pole/zero exploration.
 
@@ -44,7 +42,7 @@ end
 
 # For packagecompiler
 function julia_main()::Cint
-    start()
+    run()
     return 0
 end
 
