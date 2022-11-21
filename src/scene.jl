@@ -1,5 +1,4 @@
-
-function scenesetup()
+function scenesetup(roots, gain, outputdelay)
     set_window_config!(;
         #renderloop = renderloop,
         #vsync = false,
@@ -15,19 +14,14 @@ function scenesetup()
     fig = Figure(resolution = (1200, 1000), backgroundcolor = RGBf(0.98, 0.98, 0.98))
 
     # Variables
-    roots = Observable(Root[Root(Point2f(-1, 0), true, false)])
-
     zeros = lift(get_zeros, roots)
     poles = lift(get_poles, roots)
-    gain = Observable(1.0)
-    outputdelay = Observable(0.0)
+    sys = lift(create_system, zeros, poles, gain, outputdelay)
 
     selected_data = lift(get_selected, roots)
     selected_idx = lift(x -> x[1], selected_data)
     selected_pos = lift(x -> x[2], selected_data)
     selected_token = lift(x -> x[3], selected_data)
-    
-    sys = lift(create_system, zeros, poles, gain, outputdelay)
 
     # Layout
     slider_box = fig[1, 1] = GridLayout()
