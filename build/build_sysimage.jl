@@ -1,7 +1,7 @@
 import Pkg
 Pkg.activate(; temp=true)
 Pkg.add("PackageCompiler")
-Pkg.dev(path=joinpath(@__DIR__, "..")) # dev or add?
+Pkg.develop(path=joinpath(@__DIR__, "..")) # dev or add?
 
 using PackageCompiler
 create_sysimage(
