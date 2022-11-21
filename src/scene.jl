@@ -1,15 +1,20 @@
+function generate_slider!(name, values, default_value)
+    slider_area = GridLayout()
+    slider = Slider(slider_box[1, 1], range=-10:0.01:10, startvalue=gain[])
+    text = Textbox(f[1, 1], placeholder = "Enter a string...", width=300)
+    label = Label(slider_box[1, 2], text = lift(x -> "K=$(x)", gain_slider.value), textsize=20)
+    on(gain_slider.value) do value
+        gain[] = value
+    end
+    delay_slider = Slider(slider_box[2, 1], range=0:0.01:2, startvalue=gain[])
+    delay_label = Label(slider_box[2, 2], text = lift(x -> "Output delay $(x)", delay_slider.value), textsize=20)
+    on(delay_slider.value) do value
+        outputdelay[] = value
+    end
+end
 
 function scenesetup()
-    set_window_config!(;
-        #renderloop = renderloop,
-        #vsync = false,
-        #framerate = 30.0,
-        #float = false,
-        #pause_rendering = false,
-        #focus_on_show = false,
-        #decorated = true,
-        title = "Pole Exploration"
-    )
+    set_window_config!(; title = "Pole Exploration")
 
     # Parent scene
     fig = Figure(resolution = (1200, 1000), backgroundcolor = RGBf(0.98, 0.98, 0.98))
@@ -54,12 +59,16 @@ function scenesetup()
     xlims!(root_ax, high=1)
 
     # Step plot
-    step_points = lift(sys -> begin
+    stepvars = lift(sys -> begin
         y, t, x = step(sys)
+        static_gain = only(dcgain(sys))
         limits!(step_ax, find_limits(t), find_limits(y))
-        convert.(Point2f, zip(t, vec(y)))
+        t, y, static_gain
     end, sys)
+    step_points = lift(x -> convert.(Point2f, zip(x[1], x[2])), stepvars)
+    step_gain_points = lift(x -> convert.(Point2f, [[x[1][1], x[3]], [x[1][end], x[3]]]), stepvars)
     lines!(step_ax, step_points)
+    lines!(step_ax, step_gain_points, linestyle=:dash, color=:black)
 
     # Impulse plot
     # impulse_points = lift(sys -> begin
@@ -109,6 +118,21 @@ function scenesetup()
     on(delay_slider.value) do value
         outputdelay[] = value
     end
+
+    # Two way connections for these, changing in pzplot should update slider, update slider should update pzplot
+    # How to do this without creating loop?
+    omega_slider = Slider(slider_box[3, 1], range=-10:0.01:10, startvalue=gain[])
+    omega_label = Label(slider_box[3, 2], text = lift(x -> "K=$(x)", omega_slider.value), textsize=20)
+    on(omega_slider.value) do value
+        omega[] = value
+    end
+    # Turn off zeta if single pole selected?
+    zeta_slider = Slider(slider_box[4, 1], range=-10:0.01:10, startvalue=gain[])
+    zeta_label = Label(slider_box[4, 2], text = lift(x -> "K=$(x)", zeta_slider.value), textsize=20)
+    on(zeta_slider.value) do value
+        zeta[] = value
+    end
+
 
     # Display transfer function
     tf_text = lift(print_tf, roots, gain, outputdelay)
