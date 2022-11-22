@@ -39,6 +39,8 @@ function scenesetup(roots, gain, outputdelay)
     scatter!(root_ax, poles, color=:black, marker=POLE_MARKER, markersize=12)
     scatter!(root_ax, zeros, color=:black, marker=ZERO_MARKER, markersize=12)
     scatter!(root_ax, selected_pos, color=:red, marker=selected_token, markersize=12)
+    vlines!(root_ax, 0.0; linestyle=:dash, color=:gray)
+    hlines!(root_ax, 0.0; linestyle=:dash, color=:gray)
     xlims!(root_ax, high=1)
 
     # Step plot
@@ -47,7 +49,10 @@ function scenesetup(roots, gain, outputdelay)
         limits!(step_ax, find_limits(t), find_limits(y))
         convert.(Point2f, zip(t, vec(y)))
     end, sys)
+    step_points = lift(x -> convert.(Point2f, zip(x[1], x[2])), stepvars)
+    step_gain = lift(x -> x[3], stepvars)
     lines!(step_ax, step_points)
+    hlines!(step_ax, step_gain; linestyle=:dash, color=:gray)
 
     # Impulse plot
     # impulse_points = lift(sys -> begin
@@ -74,7 +79,9 @@ function scenesetup(roots, gain, outputdelay)
     bodemag_points = lift(x -> convert.(Point2f, zip(x[1], x[2])), bodevars)
     bodephase_points = lift(x -> convert.(Point2f, zip(x[1], x[3])), bodevars)
     lines!(bodemag_ax, bodemag_points)
+    hlines!(bodemag_ax, 1; linestyle=:dash, color=:gray)
     lines!(bodephase_ax, bodephase_points)
+    hlines!(bodephase_ax, -180; linestyle=:dash, color=:gray)
 
     # Nyquist plot
     nyquist_points = lift(sys -> begin
@@ -83,8 +90,8 @@ function scenesetup(roots, gain, outputdelay)
         convert.(Point2f, zip(a, b))
     end, sys)
     lines!(nyquist_ax, nyquist_points)
-    lines!(nyquist_ax, cos.(0:0.01:2pi), sin.(0:0.01:2pi), color=:gray, linestyle=:dash)
-    scatter!(nyquist_ax, -1, 0, marker='+', color=:red, markersize=12)
+    lines!(nyquist_ax, cos.(0:0.01:2pi), sin.(0:0.01:2pi); color=:gray, linestyle=:dash)
+    scatter!(nyquist_ax, -1, 0; marker='+', color=:red, markersize=12)
 
     # Sliders
     gain_slider = Slider(slider_box[1, 1], range=-10:0.01:10, startvalue=gain[])
