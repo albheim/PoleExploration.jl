@@ -44,10 +44,11 @@ function scenesetup(roots, gain, outputdelay)
     xlims!(root_ax, high=1)
 
     # Step plot
-    step_points = lift(sys -> begin
+    stepvars = lift(sys -> begin
         y, t, x = step(sys)
+        static_gain = only(dcgain(sys))
         limits!(step_ax, find_limits(t), find_limits(y))
-        convert.(Point2f, zip(t, vec(y)))
+        t, y, static_gain
     end, sys)
     step_points = lift(x -> convert.(Point2f, zip(x[1], x[2])), stepvars)
     step_gain = lift(x -> x[3], stepvars)
