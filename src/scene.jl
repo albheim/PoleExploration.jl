@@ -171,17 +171,16 @@ function scenesetup(roots, gain, outputdelay)
             y = 0
         end
         unselect_all!(roots) # Unselects without sending out update
-        newroot = Root(Point2f(x, abs(y)), true, true) # Add new root and send update
+        newroot = Root(Point2f(x, abs(y)), true, true, y == 0) # Add new root and send update
         roots[] = push!(roots[], newroot)
     end
 
     on(events(fig).keyboardbutton) do event
         if event.action == Keyboard.press || event.action == Keyboard.repeat
             if event.key == Keyboard.r
-                roots[] = Root[Root(Point2f(-1, 0), true, false)]
+                roots[] = Root[Root(Point2f(-1, 0), true, false, false)]
                 set_close_to!(gain_slider, 1.0)
                 set_close_to!(delay_slider, 0.0)
-                autolimits!(root_ax)
             elseif event.key == Keyboard.space
                 if selected_idx[] != 0
                     if roots.val[selected_idx[]].pole && length(poles[]) - length(zeros[]) < 2 * (1 + (roots.val[selected_idx[]].pos[2] != 0))
@@ -204,6 +203,11 @@ function scenesetup(roots, gain, outputdelay)
                 sys[] = sys[]
                 autolimits!(root_ax)
                 xlims!(root_ax, high=1)
+
+                autolimits!(bodemag_ax)
+                autolimits!(bodephase_ax)
+                autolimits!(step_ax)
+                autolimits!(nyquist_ax)
             end
         end
     end
