@@ -42,6 +42,8 @@ There is some problem with `GLFW.jl` on some computers resulting in an error alo
 export LD_PRELOAD=/usr/lib64/libstdc++.so.6 julia --project -e "using PoleExploration; start()"
 ```
 
+This is currently the default in the `run_sysimage.sh` file.
+
 # TODO
 * Use unit static gain tf for each root (pair), i.e. 1/(sT+1) and w^2/(s^2+2*z*w*s+w^2)
 * Add sliders for currently selected root(s) parameters, i.e. T or w/z. Needs to be linked with roots in both directions.

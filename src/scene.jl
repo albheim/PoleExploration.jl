@@ -1,14 +1,20 @@
+function generate_slider!(name, values, default_value)
+    slider_area = GridLayout()
+    slider = Slider(slider_box[1, 1], range=-10:0.01:10, startvalue=gain[])
+    text = Textbox(f[1, 1], placeholder = "Enter a string...", width=300)
+    label = Label(slider_box[1, 2], text = lift(x -> "K=$(x)", gain_slider.value), textsize=20)
+    on(gain_slider.value) do value
+        gain[] = value
+    end
+    delay_slider = Slider(slider_box[2, 1], range=0:0.01:2, startvalue=gain[])
+    delay_label = Label(slider_box[2, 2], text = lift(x -> "Output delay $(x)", delay_slider.value), textsize=20)
+    on(delay_slider.value) do value
+        outputdelay[] = value
+    end
+end
+
 function scenesetup(roots, gain, outputdelay)
-    set_window_config!(;
-        #renderloop = renderloop,
-        #vsync = false,
-        #framerate = 30.0,
-        #float = false,
-        #pause_rendering = false,
-        #focus_on_show = false,
-        #decorated = true,
-        title = "Pole Exploration"
-    )
+    set_window_config!(; title = "Pole Exploration")
 
     # Parent scene
     fig = Figure(resolution = (1200, 1000), backgroundcolor = RGBf(0.98, 0.98, 0.98))
@@ -16,7 +22,7 @@ function scenesetup(roots, gain, outputdelay)
     # Variables
     zeros = lift(get_zeros, roots)
     poles = lift(get_poles, roots)
-    sys = lift(create_system, zeros, poles, gain, outputdelay)
+    sys = lift(create_system, roots, gain, outputdelay)
 
     selected_data = lift(get_selected, roots)
     selected_idx = lift(x -> x[1], selected_data)
@@ -106,6 +112,20 @@ function scenesetup(roots, gain, outputdelay)
         outputdelay[] = value
     end
 
+    # Two way connections for these, changing in pzplot should update slider, update slider should update pzplot
+    # How to do this without creating loop?
+    # omega_slider = Slider(slider_box[3, 1], range=-10:0.01:10, startvalue=gain[])
+    # omega_label = Label(slider_box[3, 2], text = lift(x -> "K=$(x)", omega_slider.value), textsize=20)
+    # on(omega_slider.value) do value
+    #     omega[] = value
+    # end
+    # # Turn off zeta if single pole selected?
+    # zeta_slider = Slider(slider_box[4, 1], range=-10:0.01:10, startvalue=gain[])
+    # zeta_label = Label(slider_box[4, 2], text = lift(x -> "K=$(x)", zeta_slider.value), textsize=20)
+    # on(zeta_slider.value) do value
+    #     zeta[] = value
+    # end
+
     # Display transfer function
     tf_text = lift(print_tf, roots, gain, outputdelay)
     tf_label = Label(tf_box[1, 1], text=tf_text, tellwidth=false)
@@ -151,17 +171,18 @@ function scenesetup(roots, gain, outputdelay)
             y = 0
         end
         unselect_all!(roots) # Unselects without sending out update
-        newroot = Root(Point2f(x, abs(y)), true, true) # Add new root and send update
+        newroot = Root(Point2f(x, abs(y)), true, true, y != 0) # Add new root and send update
         roots[] = push!(roots[], newroot)
     end
 
     on(events(fig).keyboardbutton) do event
         if event.action == Keyboard.press || event.action == Keyboard.repeat
             if event.key == Keyboard.r
-                roots[] = Root[Root(Point2f(-1, 0), true, false)]
+                roots[] = Root[Root(Point2f(-1, 0), true, false, false)]
                 set_close_to!(gain_slider, 1.0)
                 set_close_to!(delay_slider, 0.0)
                 autolimits!(root_ax)
+                xlims!(root_ax, high=1)
             elseif event.key == Keyboard.space
                 if selected_idx[] != 0
                     if roots.val[selected_idx[]].pole && length(poles[]) - length(zeros[]) < 2 * (1 + (roots.val[selected_idx[]].pos[2] != 0))

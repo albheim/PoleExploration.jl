@@ -14,14 +14,14 @@ using SnoopPrecompile
 @precompile_setup begin
     # Some stuff here?
     @precompile_all_calls begin
-        roots = Observable(Root[Root(Point2f(-1, 0), true, false)])
+        roots = Observable(Root[Root(Point2f(-1, 0), true, false, false)])
         gain = Observable(1.0)
         outputdelay = Observable(0.0)
 
         fig = scenesetup(roots, gain, outputdelay)
 
-        roots[] = push!(roots[], Root(Point2f(-0.5, 1.0), true, true))
-        roots[] = push!(roots[], Root(Point2f(5.0, 0.0), false, true))
+        roots[] = push!(roots[], Root(Point2f(-0.5, 1.0), true, true, true))
+        roots[] = push!(roots[], Root(Point2f(5.0, 0.0), false, true, false))
         gain[] = 2.0
         outputdelay[] = 1.0
 
@@ -48,7 +48,7 @@ function run()
     """)
 
     # Initial values
-    roots = Observable(Root[Root(Point2f(-1, 0), true, false)])
+    roots = Observable(Root[Root(Point2f(-1, 0), true, false, false)])
     gain = Observable(1.0)
     outputdelay = Observable(0.0)
 
