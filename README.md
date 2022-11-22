@@ -9,6 +9,7 @@ julia> ] add https://github.com/albheim/PoleExploration.jl
 ```
 
 # Usage 
+### Start
 Either start it from a running julia REPL like
 ```julia-repl
 julia> import PoleExploration
@@ -20,9 +21,14 @@ or from the command line like
 julia -e "import PoleExploration; PoleExploration.run()"
 ```
 
-This will start a GUI where you can interact with poles/zeros. 
+Additionally there is a `run_sysimage.{sh/bat}` for linux/windows which compiles a system-image
+and runs the program through this. This will take quite some time the first run, but reduce
+the startup for consecutive runs.
 
-Double left click will add a pole in the root locus.
+### Interactive controls
+Running it you will get a GUI where you can interact with poles/zeros. 
+
+Double left click will add a pole in the pole-zero diagram.
 Left click will select a root (pole/zero), when selected you can:
 * Move it to a new location with right click.
 * Switch between pole/zero with space.
@@ -35,3 +41,9 @@ There is some problem with `GLFW.jl` on some computers resulting in an error alo
 ```bash
 export LD_PRELOAD=/usr/lib64/libstdc++.so.6 julia --project -e "using PoleExploration; start()"
 ```
+
+# TODO
+* Use unit static gain tf for each root (pair), i.e. 1/(sT+1) and w^2/(s^2+2*z*w*s+w^2)
+* Add sliders for currently selected root(s) parameters, i.e. T or w/z. Needs to be linked with roots in both directions.
+* Allow selecting a freq in bode/nyquist and reflect the point in the other.
+* Impulse or not, need to fix delay problems.

@@ -33,9 +33,9 @@ end
 
 function run()
     println("""
-    This is a tool for pole/zero exploration.
+    This is a tool for exploring how pole-zero placements affect the system properties.
 
-    Double left click will add poles in the root locus.
+    Double left click will add poles in the pole-zero diagram.
     Select roots with left click to drag or modify them. 
     * Space will switch between pole and zero for the selected root.
     * Delete will remove the selected root.
@@ -47,18 +47,14 @@ function run()
     Pressing r will reset everything to the start configuration.
     """)
 
+    # Initial values
     roots = Observable(Root[Root(Point2f(-1, 0), true, false)])
     gain = Observable(1.0)
     outputdelay = Observable(0.0)
 
+    # Create scene and wait for the display to be closed
     fig = scenesetup(roots, gain, outputdelay)
     wait(display(fig))
-end
-
-# For packagecompiler
-function julia_main()::Cint
-    run()
-    return 0
 end
 
 end
