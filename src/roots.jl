@@ -19,6 +19,7 @@ mutable struct Root
     pos::Point2f
     pole::Bool
     selected::Bool
+    double::Bool
 end
 
 function get_poles(roots)
@@ -26,7 +27,7 @@ function get_poles(roots)
     for node in roots
         if node.pole 
             push!(a, node.pos)
-            if node.pos[2] != 0
+            if node.double
                 push!(a, node.pos .* [1, -1])
             end
         end
@@ -38,7 +39,7 @@ function to_points(roots)
     a = Point2f[]
     for node in roots
         push!(a, node.pos)
-        if node.pos[2] != 0
+        if node.double
             push!(a, node.pos .* [1, -1])
         end
     end
@@ -50,7 +51,7 @@ function get_zeros(roots)
     for node in roots
         if !node.pole
             push!(a, node.pos)
-            if node.pos[2] != 0
+            if node.double
                 push!(a, node.pos .* [1, -1])
             end
         end
@@ -61,10 +62,10 @@ end
 function get_selected(roots)
     for i in eachindex(roots)
         if roots[i].selected
-            if roots[i].pos[2] == 0
-                return i, Point2f[roots[i].pos], roots[i].pole ? POLE_MARKER : ZERO_MARKER 
-            else
+            if roots[i].double
                 return i, Point2f[roots[i].pos, [1, -1] .* roots[i].pos], roots[i].pole ? POLE_MARKER : ZERO_MARKER
+            else
+                return i, Point2f[roots[i].pos], roots[i].pole ? POLE_MARKER : ZERO_MARKER 
             end
         end
     end
