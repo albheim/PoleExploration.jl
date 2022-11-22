@@ -13,32 +13,21 @@ function generate_slider!(name, values, default_value)
     end
 end
 
-function scenesetup()
+function scenesetup(roots, gain, outputdelay)
     set_window_config!(; title = "Pole Exploration")
 
     # Parent scene
     fig = Figure(resolution = (1200, 1000), backgroundcolor = RGBf(0.98, 0.98, 0.98))
 
     # Variables
-    roots = Observable(Root[Root(Point2f(-1, 0), true, false)])
-
     zeros = lift(get_zeros, roots)
     poles = lift(get_poles, roots)
-    gain = Observable(1.0)
-    outputdelay = Observable(0.0)
+    sys = lift(create_system, zeros, poles, gain, outputdelay)
 
     selected_data = lift(get_selected, roots)
     selected_idx = lift(x -> x[1], selected_data)
     selected_pos = lift(x -> x[2], selected_data)
     selected_token = lift(x -> x[3], selected_data)
-    
-    sys = lift((z, p, k, d) -> begin
-        if d == 0 # It does not seem to like delay(0) for speed so better to special case them
-            DelayLtiSystem(zpk([a + b*im for (a, b) in z], [a + b*im for (a, b) in p], k)) # Convert to make types same
-        else
-            delay(d) * zpk([a + b*im for (a, b) in z], [a + b*im for (a, b) in p], k)
-        end
-    end, zeros, poles, gain, outputdelay)
 
     # Layout
     slider_box = fig[1, 1] = GridLayout()
@@ -113,7 +102,7 @@ function scenesetup()
     on(gain_slider.value) do value
         gain[] = value
     end
-    delay_slider = Slider(slider_box[2, 1], range=0:0.01:2, startvalue=gain[])
+    delay_slider = Slider(slider_box[2, 1], range=0:0.01:2, startvalue=outputdelay[])
     delay_label = Label(slider_box[2, 2], text = lift(x -> "Output delay $(x)", delay_slider.value), textsize=20)
     on(delay_slider.value) do value
         outputdelay[] = value
@@ -132,7 +121,6 @@ function scenesetup()
     on(zeta_slider.value) do value
         zeta[] = value
     end
-
 
     # Display transfer function
     tf_text = lift(print_tf, roots, gain, outputdelay)

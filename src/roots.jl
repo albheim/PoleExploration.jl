@@ -1,17 +1,19 @@
-function find_close(pos, roots, eps)
-    pos = [pos[1], abs(pos[2])] # Root only has positive conjugate
-    closest = Root(Point2f(Inf, Inf), false, false)
-    for root in roots
-        if sum(abs2, root.pos .- pos) < sum(abs2, closest.pos .- pos) 
-            closest = root
-        end
-    end
-    if all(abs.(closest.pos .- pos) .< eps)
-        return closest
+function create_system(z, p, k, d)::DelayLtiSystem
+    if d == 0 # It does not seem to like delay(0) for speed so better to special case them
+        DelayLtiSystem(zpk([a + b*im for (a, b) in z], [a + b*im for (a, b) in p], k)) # Convert to make types same
+    else
+        delay(d) * zpk([a + b*im for (a, b) in z], [a + b*im for (a, b) in p], k)
     end
 end
 
-""" Root only contain the conjugate with positive imaginary part
+""" Root
+
+A root is a single pole or zero stored as a 2d coordinate.
+If `pole` is set it is a pole, otherwise a zero.
+If `selected` is set it is the currently selected root.
+
+For complex pairs we only store the root with positive imaginary part,
+the other is generated on request in `get_poles`.
 """
 mutable struct Root
     pos::Point2f
@@ -72,5 +74,18 @@ end
 function unselect_all!(roots)
     for root in roots[]
         root.selected = false
+    end
+end
+
+function find_close(pos, roots, eps)
+    pos = [pos[1], abs(pos[2])] # Root only has positive conjugate
+    closest = Root(Point2f(Inf, Inf), false, false)
+    for root in roots
+        if sum(abs2, root.pos .- pos) < sum(abs2, closest.pos .- pos) 
+            closest = root
+        end
+    end
+    if all(abs.(closest.pos .- pos) .< eps)
+        return closest
     end
 end

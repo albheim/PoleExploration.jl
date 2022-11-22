@@ -14,7 +14,17 @@ using SnoopPrecompile
 @precompile_setup begin
     # Some stuff here?
     @precompile_all_calls begin
-        fig = scenesetup()
+        roots = Observable(Root[Root(Point2f(-1, 0), true, false)])
+        gain = Observable(1.0)
+        outputdelay = Observable(0.0)
+
+        fig = scenesetup(roots, gain, outputdelay)
+
+        roots[] = push!(roots[], Root(Point2f(-0.5, 1.0), true, true))
+        roots[] = push!(roots[], Root(Point2f(5.0, 0.0), false, true))
+        gain[] = 2.0
+        outputdelay[] = 1.0
+
         display(fig) # Adds a lot to precompile, and reducing a little on use
         # Simulate clicks?
         # Call all root finders with Observables?
@@ -36,7 +46,12 @@ function run()
     
     Pressing r will reset everything to the start configuration.
     """)
-    fig = scenesetup()
+
+    roots = Observable(Root[Root(Point2f(-1, 0), true, false)])
+    gain = Observable(1.0)
+    outputdelay = Observable(0.0)
+
+    fig = scenesetup(roots, gain, outputdelay)
     wait(display(fig))
 end
 
