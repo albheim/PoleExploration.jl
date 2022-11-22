@@ -31,7 +31,7 @@ function print_tf(roots, gain, delay)
     den = []
 
     for root in roots
-        s = printroot(root.pos)
+        s = printroot(root)
         if root.pole
             push!(den, s)
         else
@@ -57,10 +57,10 @@ function print_tf(roots, gain, delay)
     return L"%$(round(gain, sigdigits=3))e^{-%$(round(delay, sigdigits=3))s}\cdot\frac{%$numstr}{%$denstr}"
 end
 
-function printroot(z)
-    a = z[1]
-    b = z[2]
-    if b == 0
+function printroot(root)
+    a = root.pos[1]
+    b = root.pos[2]
+    if !root.double
         return "$(round(1/abs(a), sigdigits=3))s $(a < 0 ? "+" : "-") 1"
     else
         return "$(round(1/(a^2 + b^2), sigdigits=3))s^2 $(a < 0 ? "+" : "-") $(round(2abs(a)/(a^2 + b^2), sigdigits=3))s + 1"

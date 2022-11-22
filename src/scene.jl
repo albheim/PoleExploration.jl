@@ -155,7 +155,7 @@ function scenesetup(roots, gain, outputdelay)
         if selected_idx[] != 0
             x = state.data[1]
             y = state.data[2]
-            if roots.val[selected_idx[]].pos[2] == 0                    
+            if !roots.val[selected_idx[]].double
                 y = 0
             else
                 y = abs(y)
