@@ -1,5 +1,6 @@
-using PoleExploration
 using Test
+using PoleExploration
+const PE = PoleExploration
 
 @testset "Roots" begin
     # Check that all roots.jl functions work
