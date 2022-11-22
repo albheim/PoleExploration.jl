@@ -61,7 +61,7 @@ function printroot(z)
     a = z[1]
     b = z[2]
     if b == 0
-        return "1 $(a < 0 ? "+" : "-") s$(round(1/abs(a), sigdigits=3))"
+        return "$(round(1/abs(a), sigdigits=3))s $(a < 0 ? "+" : "-") 1"
     else
         return "$(round(1/(a^2 + b^2), sigdigits=3))s^2 $(a < 0 ? "+" : "-") $(round(2abs(a)/(a^2 + b^2), sigdigits=3))s + 1"
     end

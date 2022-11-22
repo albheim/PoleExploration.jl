@@ -22,7 +22,7 @@ function scenesetup(roots, gain, outputdelay)
     # Variables
     zeros = lift(get_zeros, roots)
     poles = lift(get_poles, roots)
-    sys = lift(create_system, zeros, poles, gain, outputdelay)
+    sys = lift(create_system, roots, gain, outputdelay)
 
     selected_data = lift(get_selected, roots)
     selected_idx = lift(x -> x[1], selected_data)
@@ -114,17 +114,17 @@ function scenesetup(roots, gain, outputdelay)
 
     # Two way connections for these, changing in pzplot should update slider, update slider should update pzplot
     # How to do this without creating loop?
-    omega_slider = Slider(slider_box[3, 1], range=-10:0.01:10, startvalue=gain[])
-    omega_label = Label(slider_box[3, 2], text = lift(x -> "K=$(x)", omega_slider.value), textsize=20)
-    on(omega_slider.value) do value
-        omega[] = value
-    end
-    # Turn off zeta if single pole selected?
-    zeta_slider = Slider(slider_box[4, 1], range=-10:0.01:10, startvalue=gain[])
-    zeta_label = Label(slider_box[4, 2], text = lift(x -> "K=$(x)", zeta_slider.value), textsize=20)
-    on(zeta_slider.value) do value
-        zeta[] = value
-    end
+    # omega_slider = Slider(slider_box[3, 1], range=-10:0.01:10, startvalue=gain[])
+    # omega_label = Label(slider_box[3, 2], text = lift(x -> "K=$(x)", omega_slider.value), textsize=20)
+    # on(omega_slider.value) do value
+    #     omega[] = value
+    # end
+    # # Turn off zeta if single pole selected?
+    # zeta_slider = Slider(slider_box[4, 1], range=-10:0.01:10, startvalue=gain[])
+    # zeta_label = Label(slider_box[4, 2], text = lift(x -> "K=$(x)", zeta_slider.value), textsize=20)
+    # on(zeta_slider.value) do value
+    #     zeta[] = value
+    # end
 
     # Display transfer function
     tf_text = lift(print_tf, roots, gain, outputdelay)
@@ -171,7 +171,7 @@ function scenesetup(roots, gain, outputdelay)
             y = 0
         end
         unselect_all!(roots) # Unselects without sending out update
-        newroot = Root(Point2f(x, abs(y)), true, true, y == 0) # Add new root and send update
+        newroot = Root(Point2f(x, abs(y)), true, true, y != 0) # Add new root and send update
         roots[] = push!(roots[], newroot)
     end
 
@@ -181,6 +181,8 @@ function scenesetup(roots, gain, outputdelay)
                 roots[] = Root[Root(Point2f(-1, 0), true, false, false)]
                 set_close_to!(gain_slider, 1.0)
                 set_close_to!(delay_slider, 0.0)
+                autolimits!(root_ax)
+                xlims!(root_ax, high=1)
             elseif event.key == Keyboard.space
                 if selected_idx[] != 0
                     if roots.val[selected_idx[]].pole && length(poles[]) - length(zeros[]) < 2 * (1 + (roots.val[selected_idx[]].pos[2] != 0))
@@ -203,11 +205,6 @@ function scenesetup(roots, gain, outputdelay)
                 sys[] = sys[]
                 autolimits!(root_ax)
                 xlims!(root_ax, high=1)
-
-                autolimits!(bodemag_ax)
-                autolimits!(bodephase_ax)
-                autolimits!(step_ax)
-                autolimits!(nyquist_ax)
             end
         end
     end
