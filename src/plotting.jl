@@ -1,14 +1,3 @@
-function log_ticks(loglims)
-    a = round(loglims[1], RoundDown)
-    b = round(loglims[2], RoundUp)
-    @show a b
-    v = log10.(1:9)
-    ticks = vcat([i .+ a .+ v for i in 0:b-a]..., [b])
-    @show ticks
-    labels = [tick == round(tick) ? L"10^{%$(round(Int, tick))}" : " " for tick in ticks]
-    return ticks, labels
-end
-
 function find_limits(vals; start=[first(vals), first(vals)], margins=0.05)
     vmin = start[1]
     vmax = start[2]
