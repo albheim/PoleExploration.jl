@@ -55,3 +55,4 @@ This is currently the default in the `run_sysimage.sh` file.
 * Allow for multiple tfs, one is "active" and can be interacted with, the other are just for comparison in different color?
 * Improve precompile as well as packagecompiler.
 * Fix tests, could maybe be used for precompile/packagecompiler.
+* Use https://docs.makie.org/stable/documentation/events/#point_picking instead of home rolled

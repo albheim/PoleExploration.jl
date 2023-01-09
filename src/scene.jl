@@ -134,6 +134,7 @@ function scenesetup(roots, gain, outputdelay)
     deregister_interaction!(root_ax, :rectanglezoom) # To allow for dragging roots
     mousestate = addmouseevents!(root_ax.scene)
     onmouseleftclick(mousestate) do state
+        println("Single click $state")
         # Find closest point, if point is within reasonable distance given scale select it
         root = find_close(state.data, roots[], root_ax.finallimits[].widths ./ 50)
         unselect_all!(roots) # Unselects without sending out update
@@ -165,6 +166,7 @@ function scenesetup(roots, gain, outputdelay)
         end
     end
     onmouseleftdoubleclick(mousestate) do state
+        println("Double click $state")
         x = state.data[1]
         y = state.data[2]
         if abs(y) < root_ax.finallimits[].widths[2] / 100
@@ -209,5 +211,5 @@ function scenesetup(roots, gain, outputdelay)
         end
     end
 
-    fig
+    fig, mousestate
 end
