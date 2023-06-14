@@ -1,18 +1,3 @@
-function generate_slider!(name, values, default_value)
-    slider_area = GridLayout()
-    slider = Slider(slider_box[1, 1], range=-10:0.01:10, startvalue=gain[])
-    text = Textbox(f[1, 1], placeholder = "Enter a string...", width=300)
-    label = Label(slider_box[1, 2], text = lift(x -> "K=$(x)", gain_slider.value), textsize=20)
-    on(gain_slider.value) do value
-        gain[] = value
-    end
-    delay_slider = Slider(slider_box[2, 1], range=0:0.01:2, startvalue=gain[])
-    delay_label = Label(slider_box[2, 2], text = lift(x -> "Output delay $(x)", delay_slider.value), textsize=20)
-    on(delay_slider.value) do value
-        outputdelay[] = value
-    end
-end
-
 function scenesetup(roots, gain, outputdelay)
     set_window_config!(; title = "Pole Exploration")
 
@@ -134,7 +119,6 @@ function scenesetup(roots, gain, outputdelay)
     deregister_interaction!(root_ax, :rectanglezoom) # To allow for dragging roots
     mousestate = addmouseevents!(root_ax.scene)
     onmouseleftclick(mousestate) do state
-        println("Single click $state")
         # Find closest point, if point is within reasonable distance given scale select it
         root = find_close(state.data, roots[], root_ax.finallimits[].widths ./ 50)
         unselect_all!(roots) # Unselects without sending out update
@@ -166,7 +150,6 @@ function scenesetup(roots, gain, outputdelay)
         end
     end
     onmouseleftdoubleclick(mousestate) do state
-        println("Double click $state")
         x = state.data[1]
         y = state.data[2]
         if abs(y) < root_ax.finallimits[].widths[2] / 100
