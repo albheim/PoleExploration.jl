@@ -1,12 +1,12 @@
 name = "PoleExploration"
 uuid = "6f678a3b-cef4-45cd-8023-1a0e41a40050"
 authors = ["Albin Heimerson <albin.heimerson@control.lth.se>"]
-version = "0.3.1"
+version = "0.3.2"
 
 [deps]
 ControlSystems = "a6e380b2-a6ca-5380-bf3e-84a91bcd477e"
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
-SnoopPrecompile = "66db9d55-30c0-4569-8b51-7e840670fc0c"
+PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 
 [compat]
 ControlSystems = "1.0"

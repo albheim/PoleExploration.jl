@@ -1,18 +1,3 @@
-function generate_slider!(name, values, default_value)
-    slider_area = GridLayout()
-    slider = Slider(slider_box[1, 1], range=-10:0.01:10, startvalue=gain[])
-    text = Textbox(f[1, 1], placeholder = "Enter a string...", width=300)
-    label = Label(slider_box[1, 2], text = lift(x -> "K=$(x)", gain_slider.value), textsize=20)
-    on(gain_slider.value) do value
-        gain[] = value
-    end
-    delay_slider = Slider(slider_box[2, 1], range=0:0.01:2, startvalue=gain[])
-    delay_label = Label(slider_box[2, 2], text = lift(x -> "Output delay $(x)", delay_slider.value), textsize=20)
-    on(delay_slider.value) do value
-        outputdelay[] = value
-    end
-end
-
 function scenesetup(roots, gain, outputdelay)
     set_window_config!(; title = "Pole Exploration")
 
@@ -209,5 +194,5 @@ function scenesetup(roots, gain, outputdelay)
         end
     end
 
-    fig
+    fig, mousestate
 end
