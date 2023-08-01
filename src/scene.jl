@@ -87,12 +87,12 @@ function scenesetup(roots, gain, outputdelay)
 
     # Sliders
     gain_slider = Slider(slider_box[1, 1], range=-10:0.01:10, startvalue=gain[])
-    gain_label = Label(slider_box[1, 2], text = lift(x -> "K=$(x)", gain_slider.value), textsize=20)
+    gain_label = Label(slider_box[1, 2], text = lift(x -> "K=$(x)", gain_slider.value), fontsize=20)
     on(gain_slider.value) do value
         gain[] = value
     end
     delay_slider = Slider(slider_box[2, 1], range=0:0.01:2, startvalue=outputdelay[])
-    delay_label = Label(slider_box[2, 2], text = lift(x -> "Output delay $(x)", delay_slider.value), textsize=20)
+    delay_label = Label(slider_box[2, 2], text = lift(x -> "Output delay $(x)", delay_slider.value), fontsize=20)
     on(delay_slider.value) do value
         outputdelay[] = value
     end
@@ -100,13 +100,13 @@ function scenesetup(roots, gain, outputdelay)
     # Two way connections for these, changing in pzplot should update slider, update slider should update pzplot
     # How to do this without creating loop?
     # omega_slider = Slider(slider_box[3, 1], range=-10:0.01:10, startvalue=gain[])
-    # omega_label = Label(slider_box[3, 2], text = lift(x -> "K=$(x)", omega_slider.value), textsize=20)
+    # omega_label = Label(slider_box[3, 2], text = lift(x -> "K=$(x)", omega_slider.value), fontsize=20)
     # on(omega_slider.value) do value
     #     omega[] = value
     # end
     # # Turn off zeta if single pole selected?
     # zeta_slider = Slider(slider_box[4, 1], range=-10:0.01:10, startvalue=gain[])
-    # zeta_label = Label(slider_box[4, 2], text = lift(x -> "K=$(x)", zeta_slider.value), textsize=20)
+    # zeta_label = Label(slider_box[4, 2], text = lift(x -> "K=$(x)", zeta_slider.value), fontsize=20)
     # on(zeta_slider.value) do value
     #     zeta[] = value
     # end

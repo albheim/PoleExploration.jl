@@ -48,6 +48,7 @@ This is currently the default in the `run_sysimage.sh` file.
 * Using unit static gain tfs, 1/(sT+1) and w^2/(s^2+2*z*w*s+w^2), though displaying the full tf could be improved.
 * Add sliders for currently selected root(s) parameters, i.e. T or w/z. Needs to be linked with roots in both directions.
 * Maybe add textfield for each slider to allow more precise control?
+* Skip sliders and have textfield which is scrollable or something similar?
 * Allow selecting a freq in bode/nyquist and reflect the point in the other.
 * Impulse or not, need to fix delay problems.
 * Allow setting timespan and freqspan by zooming step plot and bode plot respectively.
