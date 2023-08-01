@@ -1,7 +1,7 @@
 name = "PoleExploration"
 uuid = "6f678a3b-cef4-45cd-8023-1a0e41a40050"
 authors = ["Albin Heimerson <albin.heimerson@control.lth.se>"]
-version = "0.3.2"
+version = "0.3.3"
 
 [deps]
 ControlSystems = "a6e380b2-a6ca-5380-bf3e-84a91bcd477e"
